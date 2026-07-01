@@ -2,6 +2,12 @@
 
 Ledgerly is a deployable small business accounting app for owner-managed businesses. It supports account registration, secure sign-in, bank CSV imports, transaction allocation, budgets, analytics, general ledger, trial balance, data export, and account deletion.
 
+## Free Render Demo Warning
+
+The included `render.yaml` is configured for Render's free web service plan. This is useful for demos and early feedback, but it should not be used for real customer accounting data because the SQLite database is stored on the service filesystem and may be lost when the service restarts or redeploys.
+
+For real users, upgrade to a paid service with a persistent disk or move the database to managed PostgreSQL/Supabase.
+
 ## What Is Included
 
 - User sign-up, sign-in, sign-out, and session cookies
@@ -84,8 +90,9 @@ This folder includes `render.yaml`.
 1. Create a new Render Blueprint from this project.
 2. Set `PUBLIC_BASE_URL` to your live HTTPS URL.
 3. Set `PAYMENT_CHECKOUT_URL` when your payment provider is ready.
-4. Keep the persistent disk mounted at `/app/data`.
-5. Confirm `/api/health` returns `{"ok": true, ...}` after deploy.
+4. Confirm `/api/health` returns `{"ok": true, ...}` after deploy.
+
+This free demo deployment does not include a persistent disk. Upgrade before inviting real customers.
 
 ## Backups
 
@@ -112,6 +119,8 @@ data/ledgerly.sqlite3
 ```
 
 This version stores each user's accounting workspace as JSON for speed and simplicity. For a larger launch, migrate accounts, transactions, budgets, imports, journal entries, and audit events into separate relational tables.
+
+On Render Free, this database is temporary demo storage. Do not rely on it for real businesses.
 
 ## Customer-Facing Pages
 
