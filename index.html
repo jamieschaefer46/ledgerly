@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ledgerly | Small Business Accounting</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <section class="auth-screen" id="auth-screen">
+      <div class="auth-hero">
+        <div class="brand large">
+          <div class="brand-mark">L</div>
+          <div>
+            <strong>Ledgerly</strong>
+            <span>Small business accounting, without the spreadsheet fog</span>
+          </div>
+        </div>
+        <h1>Import bank statements. Allocate transactions. Pull real accounting reports.</h1>
+        <p>Built for owner-managed businesses that need clean records, budgets, and financial clarity for R200/month.</p>
+        <div class="auth-points">
+          <span>CSV imports</span>
+          <span>General ledger</span>
+          <span>Trial balance</span>
+          <span>Budgets</span>
+        </div>
+      </div>
+
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button class="auth-tab active" data-auth-mode="signup">Create account</button>
+          <button class="auth-tab" data-auth-mode="login">Sign in</button>
+        </div>
+        <form id="auth-form" class="stacked-form">
+          <input id="auth-name" type="text" placeholder="Your name" autocomplete="name" />
+          <input id="auth-business" type="text" placeholder="Business name" autocomplete="organization" />
+          <input id="auth-email" type="email" placeholder="Email address" autocomplete="email" required />
+          <input id="auth-password" type="password" placeholder="Password, 8+ characters" autocomplete="current-password" required />
+          <button class="primary" type="submit" id="auth-submit">Create Ledgerly account</button>
+          <p id="auth-error" class="form-error" role="alert"></p>
+        </form>
+      </div>
+    </section>
+
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">L</div>
+          <div>
+            <strong>Ledgerly</strong>
+            <span>Accounting made lighter</span>
+          </div>
+        </div>
+
+        <nav class="nav" aria-label="Main navigation">
+          <button class="nav-item active" data-view="dashboard">Dashboard</button>
+          <button class="nav-item" data-view="processing">Processing</button>
+          <button class="nav-item" data-view="accounts">Accounts</button>
+          <button class="nav-item" data-view="budgets">Budgets</button>
+          <button class="nav-item" data-view="reports">Reports</button>
+          <button class="nav-item" data-view="settings">Settings</button>
+        </nav>
+
+        <section class="plan-panel">
+          <span>Pro plan</span>
+          <strong>R200 / month</strong>
+          <p>Bank imports, ledgers, trial balance, budget tracking, analytics.</p>
+          <button class="primary small" id="activate-plan">Activate</button>
+        </section>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Small business finance cockpit</p>
+            <h1 id="view-title">Dashboard</h1>
+          </div>
+          <div class="business-card">
+            <label for="business-name">Business</label>
+            <input id="business-name" type="text" value="Moyo Trading Co." />
+          </div>
+          <div class="session-card">
+            <span id="save-status">Saved</span>
+            <strong id="session-user">Signed in</strong>
+            <button id="logout" class="ghost small">Sign out</button>
+          </div>
+        </header>
+
+        <section class="view active" id="dashboard">
+          <div class="metric-grid">
+            <article class="metric">
+              <span>Income allocated</span>
+              <strong id="income-total">R0</strong>
+              <p id="income-count">0 income transactions</p>
+            </article>
+            <article class="metric">
+              <span>Expenses allocated</span>
+              <strong id="expense-total">R0</strong>
+              <p id="expense-count">0 expense transactions</p>
+            </article>
+            <article class="metric">
+              <span>Net cash movement</span>
+              <strong id="net-total">R0</strong>
+              <p>Based on imported bank lines</p>
+            </article>
+            <article class="metric">
+              <span>Unallocated</span>
+              <strong id="unallocated-total">0</strong>
+              <p>Transactions needing review</p>
+            </article>
+          </div>
+
+          <div class="dashboard-grid">
+            <section class="panel wide">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Analytics</span>
+                  <h2>Account performance</h2>
+                </div>
+                <select id="analytics-filter">
+                  <option value="all">All accounts</option>
+                  <option value="income">Income</option>
+                  <option value="expense">Expenses</option>
+                </select>
+              </div>
+              <div id="account-bars" class="bars"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Budgets</span>
+                  <h2>Monthly pulse</h2>
+                </div>
+              </div>
+              <div id="budget-pulse" class="budget-pulse"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="processing">
+          <div class="import-strip">
+            <div>
+              <p class="eyebrow">CSV bank statement</p>
+              <h2>Import, review, allocate</h2>
+              <p>Supported columns include date, description, amount, debit, credit, balance, details or reference.</p>
+            </div>
+            <div class="import-actions">
+              <label class="file-button">
+                <input id="csv-file" type="file" accept=".csv,text/csv" />
+                Import CSV
+              </label>
+              <button id="load-sample" class="secondary">Load sample</button>
+              <button id="clear-transactions" class="ghost">Clear</button>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <input id="transaction-search" type="search" placeholder="Search descriptions, accounts, amounts..." />
+            <select id="transaction-filter">
+              <option value="all">All transactions</option>
+              <option value="unallocated">Unallocated only</option>
+              <option value="income">Income</option>
+              <option value="expense">Expenses</option>
+            </select>
+          </div>
+
+          <section class="table-shell">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th>Money in/out</th>
+                  <th>Allocate to account</th>
+                  <th>VAT</th>
+                  <th>Note</th>
+                </tr>
+              </thead>
+              <tbody id="transaction-table"></tbody>
+            </table>
+          </section>
+        </section>
+
+        <section class="view" id="accounts">
+          <div class="split">
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Chart of accounts</span>
+                  <h2>Create accounts</h2>
+                </div>
+              </div>
+              <form id="account-form" class="stacked-form">
+                <input id="account-name" type="text" placeholder="Account name, e.g. Repairs and maintenance" required />
+                <select id="account-type">
+                  <option value="expense">Expense</option>
+                  <option value="income">Income</option>
+                  <option value="asset">Asset</option>
+                  <option value="liability">Liability</option>
+                  <option value="equity">Equity</option>
+                </select>
+                <button class="primary" type="submit">Add account</button>
+              </form>
+            </section>
+
+            <section class="panel wide">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Accounts</span>
+                  <h2>Active list</h2>
+                </div>
+              </div>
+              <div id="account-list" class="account-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="budgets">
+          <div class="panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">Budget planner</span>
+                <h2>Monthly targets</h2>
+              </div>
+              <button id="save-budgets" class="primary small">Save budgets</button>
+            </div>
+            <div id="budget-editor" class="budget-editor"></div>
+          </div>
+        </section>
+
+        <section class="view" id="reports">
+          <div class="report-actions">
+            <button id="export-ledger" class="secondary">Export general ledger CSV</button>
+            <button id="export-trial" class="secondary">Export trial balance CSV</button>
+          </div>
+
+          <div class="reports-grid">
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Report</span>
+                  <h2>Trial balance</h2>
+                </div>
+              </div>
+              <section class="table-shell compact">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Account</th>
+                      <th>Debit</th>
+                      <th>Credit</th>
+                    </tr>
+                  </thead>
+                  <tbody id="trial-balance"></tbody>
+                </table>
+              </section>
+            </section>
+
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Report</span>
+                  <h2>General ledger</h2>
+                </div>
+              </div>
+              <section class="table-shell compact">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Account</th>
+                      <th>Description</th>
+                      <th>Debit</th>
+                      <th>Credit</th>
+                    </tr>
+                  </thead>
+                  <tbody id="general-ledger"></tbody>
+                </table>
+              </section>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="settings">
+          <div class="split">
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Subscription</span>
+                  <h2>Ledgerly Pro</h2>
+                </div>
+              </div>
+              <div class="settings-stack">
+                <div class="setting-row">
+                  <span>Status</span>
+                  <strong id="subscription-status">Trial</strong>
+                </div>
+                <div class="setting-row">
+                  <span>Plan</span>
+                  <strong>R200 / month</strong>
+                </div>
+                <button class="primary" id="settings-activate-plan">Activate subscription</button>
+                <p class="muted-copy" id="payment-message"></p>
+              </div>
+            </section>
+
+            <section class="panel wide">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Data control</span>
+                  <h2>Export or delete</h2>
+                </div>
+              </div>
+              <div class="settings-stack">
+                <p class="muted-copy">Download a full JSON copy of your Ledgerly business data whenever you need it.</p>
+                <button class="secondary" id="export-data">Export my data</button>
+                <div class="danger-zone">
+                  <strong>Delete account</strong>
+                  <p>This permanently removes your user, business, transactions, accounts, budgets, and sessions from this Ledgerly database.</p>
+                  <input id="delete-confirmation" type="text" placeholder="Type DELETE to confirm" />
+                  <button class="ghost danger" id="delete-account">Delete my account</button>
+                  <p class="form-error" id="delete-message"></p>
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <template id="empty-state-template">
+      <tr>
+        <td colspan="6" class="empty-state">
+          <strong>No transactions yet.</strong>
+          Import a CSV bank statement or load the sample data to begin.
+        </td>
+      </tr>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
