@@ -18,12 +18,13 @@
           </div>
         </div>
         <h1>Import bank statements. Allocate transactions. Pull real accounting reports.</h1>
-        <p>Built for owner-managed businesses that need clean records, budgets, and financial clarity for R200/month.</p>
+        <p>Built for owner-managed businesses that need clean records, budgets, invoices, VAT reports, and financial clarity for R150/month.</p>
         <div class="auth-points">
           <span>CSV imports</span>
+          <span>Invoices</span>
+          <span>VAT report</span>
           <span>General ledger</span>
           <span>Trial balance</span>
-          <span>Budgets</span>
         </div>
       </div>
 
@@ -38,6 +39,7 @@
           <input id="auth-email" type="email" placeholder="Email address" autocomplete="email" required />
           <input id="auth-password" type="password" placeholder="Password, 8+ characters" autocomplete="current-password" required />
           <button class="primary" type="submit" id="auth-submit">Create Ledgerly account</button>
+          <p id="auth-hint" class="muted-copy">Creating an account signs you in automatically.</p>
           <p id="auth-error" class="form-error" role="alert"></p>
         </form>
       </div>
@@ -57,6 +59,7 @@
           <button class="nav-item active" data-view="dashboard">Dashboard</button>
           <button class="nav-item" data-view="processing">Processing</button>
           <button class="nav-item" data-view="accounts">Accounts</button>
+          <button class="nav-item" data-view="invoices">Invoices</button>
           <button class="nav-item" data-view="budgets">Budgets</button>
           <button class="nav-item" data-view="reports">Reports</button>
           <button class="nav-item" data-view="settings">Settings</button>
@@ -64,8 +67,8 @@
 
         <section class="plan-panel">
           <span>Pro plan</span>
-          <strong>R200 / month</strong>
-          <p>Bank imports, ledgers, trial balance, budget tracking, analytics.</p>
+          <strong>R150 / month</strong>
+          <p>Bank imports, invoices, VAT reports, ledgers, budget tracking, analytics.</p>
           <button class="primary small" id="activate-plan">Activate</button>
         </section>
       </aside>
@@ -88,6 +91,18 @@
         </header>
 
         <section class="view active" id="dashboard">
+          <section class="dashboard-hero">
+            <div>
+              <p class="eyebrow">Today at a glance</p>
+              <h2 id="dashboard-headline">Your books are ready for review</h2>
+              <p id="dashboard-subline">Import a bank statement or load sample data to see your business pulse.</p>
+            </div>
+            <div class="dashboard-actions">
+              <button class="secondary" data-jump-view="processing">Process bank statement</button>
+              <button class="primary" data-jump-view="invoices">Create invoice</button>
+            </div>
+          </section>
+
           <div class="metric-grid">
             <article class="metric">
               <span>Income allocated</span>
@@ -108,6 +123,24 @@
               <span>Unallocated</span>
               <strong id="unallocated-total">0</strong>
               <p>Transactions needing review</p>
+            </article>
+          </div>
+
+          <div class="insight-grid">
+            <article class="insight-card">
+              <span>Allocation progress</span>
+              <strong id="allocation-rate">0%</strong>
+              <div class="mini-track"><div id="allocation-fill" class="mini-fill"></div></div>
+            </article>
+            <article class="insight-card">
+              <span>Invoice pipeline</span>
+              <strong id="invoice-pipeline">R0</strong>
+              <p id="invoice-count">0 open invoices</p>
+            </article>
+            <article class="insight-card">
+              <span>VAT position</span>
+              <strong id="vat-position">R0</strong>
+              <p id="vat-position-label">No VAT activity yet</p>
             </article>
           </div>
 
@@ -135,6 +168,40 @@
                 </div>
               </div>
               <div id="budget-pulse" class="budget-pulse"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="invoices">
+          <div class="split">
+            <section class="panel">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Sales</span>
+                  <h2>Create invoice</h2>
+                </div>
+              </div>
+              <form id="invoice-form" class="stacked-form">
+                <input id="invoice-client" type="text" placeholder="Client name" required />
+                <input id="invoice-description" type="text" placeholder="Description, e.g. Website design" required />
+                <input id="invoice-amount" type="number" min="0" step="0.01" placeholder="Amount excluding VAT" required />
+                <select id="invoice-vat">
+                  <option value="included">Add 15% VAT</option>
+                  <option value="none">No VAT</option>
+                </select>
+                <input id="invoice-due" type="date" />
+                <button class="primary" type="submit">Add invoice</button>
+              </form>
+            </section>
+
+            <section class="panel wide">
+              <div class="panel-heading">
+                <div>
+                  <span class="eyebrow">Invoices</span>
+                  <h2>Issued invoices</h2>
+                </div>
+              </div>
+              <div id="invoice-list" class="invoice-list"></div>
             </section>
           </div>
         </section>
@@ -234,6 +301,7 @@
           <div class="report-actions">
             <button id="export-ledger" class="secondary">Export general ledger CSV</button>
             <button id="export-trial" class="secondary">Export trial balance CSV</button>
+            <button id="export-vat" class="secondary">Export VAT report CSV</button>
           </div>
 
           <div class="reports-grid">
@@ -281,6 +349,43 @@
               </section>
             </section>
           </div>
+
+          <section class="panel report-vat-panel">
+            <div class="panel-heading">
+              <div>
+                <span class="eyebrow">Report</span>
+                <h2>VAT report</h2>
+              </div>
+            </div>
+            <div class="vat-summary">
+              <article>
+                <span>Output VAT</span>
+                <strong id="vat-output-total">R0</strong>
+              </article>
+              <article>
+                <span>Input VAT</span>
+                <strong id="vat-input-total">R0</strong>
+              </article>
+              <article>
+                <span>Estimated payable / refund</span>
+                <strong id="vat-net-total">R0</strong>
+              </article>
+            </div>
+            <section class="table-shell compact">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>VAT</th>
+                  </tr>
+                </thead>
+                <tbody id="vat-report"></tbody>
+              </table>
+            </section>
+          </section>
         </section>
 
         <section class="view" id="settings">
@@ -299,7 +404,11 @@
                 </div>
                 <div class="setting-row">
                   <span>Plan</span>
-                  <strong>R200 / month</strong>
+                  <strong>R150 / month</strong>
+                </div>
+                <div class="setting-row">
+                  <span>Support</span>
+                  <strong><a href="mailto:support@ledgerly.co.za">support@ledgerly.co.za</a></strong>
                 </div>
                 <button class="primary" id="settings-activate-plan">Activate subscription</button>
                 <p class="muted-copy" id="payment-message"></p>

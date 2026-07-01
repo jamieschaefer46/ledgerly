@@ -83,7 +83,7 @@ def migrate():
               user_id integer not null references users(id) on delete cascade,
               name text not null,
               subscription_status text not null default 'trial',
-              monthly_price_cents integer not null default 20000,
+              monthly_price_cents integer not null default 15000,
               created_at text not null default current_timestamp
             );
 
@@ -300,7 +300,7 @@ class LedgerlyHandler(BaseHTTPRequestHandler):
             {
                 "checkoutUrl": PAYMENT_CHECKOUT_URL,
                 "businessId": user["business_id"],
-                "price": "R200/month",
+                "price": "R150/month",
             }
         )
 

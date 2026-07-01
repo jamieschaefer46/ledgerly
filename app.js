@@ -139,6 +139,7 @@ const dom = {
   authEmail: document.querySelector("#auth-email"),
   authPassword: document.querySelector("#auth-password"),
   authSubmit: document.querySelector("#auth-submit"),
+  authHint: document.querySelector("#auth-hint"),
   authError: document.querySelector("#auth-error"),
   logout: document.querySelector("#logout"),
   sessionUser: document.querySelector("#session-user"),
@@ -722,6 +723,9 @@ function setAuthMode(mode) {
   dom.authName.style.display = signingUp ? "" : "none";
   dom.authBusiness.style.display = signingUp ? "" : "none";
   dom.authSubmit.textContent = signingUp ? "Create Ledgerly account" : "Sign in";
+  dom.authHint.textContent = signingUp
+    ? "Creating an account signs you in automatically."
+    : "Use the same email and password you used when creating the account.";
   dom.authPassword.setAttribute("autocomplete", signingUp ? "new-password" : "current-password");
   dom.authError.textContent = "";
 }
@@ -750,9 +754,12 @@ async function submitAuth(event) {
     currentSession = data;
     const stateResponse = await fetch("/api/state");
     state = (await stateResponse.json()).state;
+    dom.authPassword.value = "";
     render();
   } catch (error) {
-    dom.authError.textContent = error.message;
+    dom.authError.textContent = authMode === "login"
+      ? `${error.message}. If this was an older demo account, create a new account because free Render storage can reset.`
+      : error.message;
   } finally {
     dom.authSubmit.disabled = false;
   }
