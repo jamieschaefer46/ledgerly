@@ -91,6 +91,8 @@ const dom = {
   title: document.querySelector("#view-title"),
   navItems: document.querySelectorAll(".nav-item"),
   views: document.querySelectorAll(".view"),
+  menuToggle: document.querySelector("#menu-toggle"),
+  mobileNavBackdrop: document.querySelector("#mobile-nav-backdrop"),
   businessName: document.querySelector("#business-name"),
   csvFile: document.querySelector("#csv-file"),
   loadSample: document.querySelector("#load-sample"),
@@ -250,26 +252,26 @@ function renderTransactions() {
       const amountClass = tx.amount >= 0 ? "money-in" : "money-out";
       return `
         <tr>
-          <td>${escapeHtml(tx.date)}</td>
-          <td>
+          <td data-label="Date">${escapeHtml(tx.date)}</td>
+          <td data-label="Description">
             <strong>${escapeHtml(tx.description)}</strong><br />
             <span class="status-pill ${tx.accountId ? "done" : ""}">${tx.accountId ? "Allocated" : "Needs account"}</span>
           </td>
-          <td class="${amountClass}">${money.format(tx.amount)}</td>
-          <td>
+          <td data-label="Money in/out" class="${amountClass}">${money.format(tx.amount)}</td>
+          <td data-label="Account">
             <select data-action="account" data-id="${tx.id}">
               <option value="">Choose account...</option>
               ${accountOptions(tx.accountId)}
             </select>
           </td>
-          <td>
+          <td data-label="VAT">
             <select data-action="vat" data-id="${tx.id}">
               <option value="none" ${tx.vat === "none" ? "selected" : ""}>No VAT</option>
               <option value="included" ${tx.vat === "included" ? "selected" : ""}>VAT included</option>
               <option value="excluded" ${tx.vat === "excluded" ? "selected" : ""}>VAT excluded</option>
             </select>
           </td>
-          <td><input data-action="note" data-id="${tx.id}" type="text" value="${escapeAttribute(tx.note || "")}" placeholder="Optional note" /></td>
+          <td data-label="Note"><input data-action="note" data-id="${tx.id}" type="text" value="${escapeAttribute(tx.note || "")}" placeholder="Optional note" /></td>
         </tr>
       `;
     })
@@ -401,11 +403,11 @@ function renderReports() {
     ? ledger
         .map((entry) => `
           <tr>
-            <td>${escapeHtml(entry.date)}</td>
-            <td>${escapeHtml(entry.accountName)}</td>
-            <td>${escapeHtml(entry.description)}</td>
-            <td>${entry.debit ? money.format(entry.debit) : ""}</td>
-            <td>${entry.credit ? money.format(entry.credit) : ""}</td>
+            <td data-label="Date">${escapeHtml(entry.date)}</td>
+            <td data-label="Account">${escapeHtml(entry.accountName)}</td>
+            <td data-label="Description">${escapeHtml(entry.description)}</td>
+            <td data-label="Debit">${entry.debit ? money.format(entry.debit) : ""}</td>
+            <td data-label="Credit">${entry.credit ? money.format(entry.credit) : ""}</td>
           </tr>
         `)
         .join("")
@@ -415,9 +417,9 @@ function renderReports() {
     ? trial
         .map((row) => `
           <tr>
-            <td>${escapeHtml(row.accountName)}</td>
-            <td>${row.debit ? money.format(row.debit) : ""}</td>
-            <td>${row.credit ? money.format(row.credit) : ""}</td>
+            <td data-label="Account">${escapeHtml(row.accountName)}</td>
+            <td data-label="Debit">${row.debit ? money.format(row.debit) : ""}</td>
+            <td data-label="Credit">${row.credit ? money.format(row.credit) : ""}</td>
           </tr>
         `)
         .join("")
@@ -430,11 +432,11 @@ function renderReports() {
     ? vat.rows
         .map((row) => `
           <tr>
-            <td>${escapeHtml(row.date)}</td>
-            <td>${escapeHtml(row.description)}</td>
-            <td>${escapeHtml(row.type)}</td>
-            <td>${money.format(row.amount)}</td>
-            <td>${money.format(row.vat)}</td>
+            <td data-label="Date">${escapeHtml(row.date)}</td>
+            <td data-label="Description">${escapeHtml(row.description)}</td>
+            <td data-label="Type">${escapeHtml(row.type)}</td>
+            <td data-label="Amount">${money.format(row.amount)}</td>
+            <td data-label="VAT">${money.format(row.vat)}</td>
           </tr>
         `)
         .join("")
@@ -808,6 +810,11 @@ async function deleteMyAccount() {
   }
 }
 
+function setMobileNav(open) {
+  document.body.classList.toggle("nav-open", open);
+  dom.menuToggle.setAttribute("aria-expanded", String(open));
+}
+
 function createInvoice(event) {
   event.preventDefault();
   const amount = Number(dom.invoiceAmount.value) || 0;
@@ -839,8 +846,15 @@ dom.navItems.forEach((button) => {
     button.classList.add("active");
     document.querySelector(`#${button.dataset.view}`).classList.add("active");
     dom.title.textContent = button.textContent;
+    setMobileNav(false);
   });
 });
+
+dom.menuToggle.addEventListener("click", () => {
+  setMobileNav(!document.body.classList.contains("nav-open"));
+});
+
+dom.mobileNavBackdrop.addEventListener("click", () => setMobileNav(false));
 
 document.querySelectorAll("[data-jump-view]").forEach((button) => {
   button.addEventListener("click", () => {
