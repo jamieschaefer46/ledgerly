@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: ledgerly
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    disk:
+      name: ledgerly-data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 8080
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: PAYMENT_CHECKOUT_URL
+        sync: false
