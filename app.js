@@ -1,4 +1,5 @@
 const STORAGE_KEY = "ledgerly-state-v1";
+const VAT_RATE = 0.15;
 let currentSession = null;
 let authMode = "signup";
 let saveTimer = null;
@@ -52,6 +53,7 @@ function loadState() {
       fuel: 2500,
       software: 750,
     },
+    invoices: [],
   };
 }
 
@@ -109,6 +111,26 @@ const dom = {
   trialBalance: document.querySelector("#trial-balance"),
   exportLedger: document.querySelector("#export-ledger"),
   exportTrial: document.querySelector("#export-trial"),
+  exportVat: document.querySelector("#export-vat"),
+  vatReport: document.querySelector("#vat-report"),
+  vatOutputTotal: document.querySelector("#vat-output-total"),
+  vatInputTotal: document.querySelector("#vat-input-total"),
+  vatNetTotal: document.querySelector("#vat-net-total"),
+  dashboardHeadline: document.querySelector("#dashboard-headline"),
+  dashboardSubline: document.querySelector("#dashboard-subline"),
+  allocationRate: document.querySelector("#allocation-rate"),
+  allocationFill: document.querySelector("#allocation-fill"),
+  invoicePipeline: document.querySelector("#invoice-pipeline"),
+  invoiceCount: document.querySelector("#invoice-count"),
+  vatPosition: document.querySelector("#vat-position"),
+  vatPositionLabel: document.querySelector("#vat-position-label"),
+  invoiceForm: document.querySelector("#invoice-form"),
+  invoiceClient: document.querySelector("#invoice-client"),
+  invoiceDescription: document.querySelector("#invoice-description"),
+  invoiceAmount: document.querySelector("#invoice-amount"),
+  invoiceVat: document.querySelector("#invoice-vat"),
+  invoiceDue: document.querySelector("#invoice-due"),
+  invoiceList: document.querySelector("#invoice-list"),
   authScreen: document.querySelector("#auth-screen"),
   authForm: document.querySelector("#auth-form"),
   authTabs: document.querySelectorAll(".auth-tab"),
@@ -145,6 +167,7 @@ function accountOptions(selectedId = "") {
 }
 
 function render() {
+  state.invoices ||= [];
   document.body.classList.toggle("authenticated", Boolean(currentSession?.user));
   if (currentSession?.user) {
     dom.sessionUser.textContent = currentSession.user.email;
@@ -152,8 +175,10 @@ function render() {
   }
   dom.businessName.value = state.businessName;
   renderMetrics();
+  renderDashboardInsights();
   renderTransactions();
   renderAccounts();
+  renderInvoices();
   renderAnalytics();
   renderBudgets();
   renderReports();
@@ -174,6 +199,29 @@ function renderMetrics() {
   dom.unallocatedTotal.textContent = String(unallocated);
   dom.incomeCount.textContent = `${income.length} income transactions`;
   dom.expenseCount.textContent = `${expenses.length} expense transactions`;
+}
+
+function renderDashboardInsights() {
+  const totalTransactions = state.transactions.length;
+  const allocatedTransactions = state.transactions.filter((tx) => tx.accountId).length;
+  const allocationRate = totalTransactions ? Math.round((allocatedTransactions / totalTransactions) * 100) : 0;
+  const openInvoices = state.invoices.filter((invoice) => invoice.status !== "paid");
+  const pipeline = openInvoices.reduce((sum, invoice) => sum + invoice.total, 0);
+  const vat = buildVatReport();
+  const netVat = vat.outputTotal - vat.inputTotal;
+
+  dom.dashboardHeadline.textContent = totalTransactions
+    ? `${allocationRate}% of imported transactions are allocated`
+    : "Your books are ready for review";
+  dom.dashboardSubline.textContent = totalTransactions
+    ? `${allocatedTransactions} of ${totalTransactions} bank lines are classified. ${openInvoices.length} invoice${openInvoices.length === 1 ? "" : "s"} still open.`
+    : "Import a bank statement or load sample data to see your business pulse.";
+  dom.allocationRate.textContent = `${allocationRate}%`;
+  dom.allocationFill.style.width = `${allocationRate}%`;
+  dom.invoicePipeline.textContent = money.format(pipeline);
+  dom.invoiceCount.textContent = `${openInvoices.length} open invoice${openInvoices.length === 1 ? "" : "s"}`;
+  dom.vatPosition.textContent = money.format(Math.abs(netVat));
+  dom.vatPositionLabel.textContent = netVat > 0 ? "Estimated VAT payable" : netVat < 0 ? "Estimated VAT refund" : "No VAT activity yet";
 }
 
 function renderTransactions() {
@@ -245,6 +293,31 @@ function renderAccounts() {
       `;
     })
     .join("");
+}
+
+function renderInvoices() {
+  const invoices = [...state.invoices].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  dom.invoiceList.innerHTML = invoices.length
+    ? invoices
+        .map((invoice) => `
+          <article class="invoice-card">
+            <header>
+              <div>
+                <strong>${escapeHtml(invoice.client)}</strong>
+                <p>${escapeHtml(invoice.description)}</p>
+              </div>
+              <strong>${money.format(invoice.total)}</strong>
+            </header>
+            <p>Due ${escapeHtml(invoice.dueDate || "No due date")} · ${invoice.vatMode === "included" ? "VAT included" : "No VAT"} · ${escapeHtml(invoice.status)}</p>
+            <div class="invoice-actions">
+              <button class="secondary small" data-invoice-status="paid" data-id="${invoice.id}">Mark paid</button>
+              <button class="ghost small" data-invoice-status="sent" data-id="${invoice.id}">Mark sent</button>
+              <button class="ghost danger small" data-remove-invoice="${invoice.id}">Delete</button>
+            </div>
+          </article>
+        `)
+        .join("")
+    : `<div class="empty-state"><strong>No invoices yet.</strong><br />Create an invoice to track expected income.</div>`;
 }
 
 function renderAnalytics() {
@@ -321,6 +394,7 @@ function renderBudgets() {
 function renderReports() {
   const ledger = buildLedger();
   const trial = buildTrialBalance(ledger);
+  const vat = buildVatReport();
 
   dom.generalLedger.innerHTML = ledger.length
     ? ledger
@@ -347,6 +421,23 @@ function renderReports() {
         `)
         .join("")
     : `<tr><td colspan="3" class="empty-state"><strong>No trial balance yet.</strong></td></tr>`;
+
+  dom.vatOutputTotal.textContent = money.format(vat.outputTotal);
+  dom.vatInputTotal.textContent = money.format(vat.inputTotal);
+  dom.vatNetTotal.textContent = money.format(vat.outputTotal - vat.inputTotal);
+  dom.vatReport.innerHTML = vat.rows.length
+    ? vat.rows
+        .map((row) => `
+          <tr>
+            <td>${escapeHtml(row.date)}</td>
+            <td>${escapeHtml(row.description)}</td>
+            <td>${escapeHtml(row.type)}</td>
+            <td>${money.format(row.amount)}</td>
+            <td>${money.format(row.vat)}</td>
+          </tr>
+        `)
+        .join("")
+    : `<tr><td colspan="5" class="empty-state"><strong>No VAT entries yet.</strong><br />Set VAT on processed transactions or create VAT invoices.</td></tr>`;
 }
 
 function buildLedger() {
@@ -386,6 +477,50 @@ function buildTrialBalance(ledger) {
       credit: net < 0 ? Math.abs(net) : 0,
     };
   });
+}
+
+function buildVatReport() {
+  const transactionRows = state.transactions
+    .filter((tx) => tx.vat && tx.vat !== "none")
+    .map((tx) => {
+      const vat = calculateVat(tx.amount, tx.vat);
+      const income = tx.amount > 0;
+      return {
+        date: tx.date,
+        description: tx.description,
+        type: income ? "Output VAT" : "Input VAT",
+        amount: Math.abs(tx.amount),
+        vat,
+        output: income ? vat : 0,
+        input: income ? 0 : vat,
+      };
+    });
+
+  const invoiceRows = state.invoices
+    .filter((invoice) => invoice.vatMode === "included")
+    .map((invoice) => ({
+      date: invoice.createdAt?.slice(0, 10) || "",
+      description: `Invoice: ${invoice.client} - ${invoice.description}`,
+      type: "Output VAT",
+      amount: invoice.total,
+      vat: invoice.vat,
+      output: invoice.vat,
+      input: 0,
+    }));
+
+  const rows = [...transactionRows, ...invoiceRows].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  return {
+    rows,
+    outputTotal: rows.reduce((sum, row) => sum + row.output, 0),
+    inputTotal: rows.reduce((sum, row) => sum + row.input, 0),
+  };
+}
+
+function calculateVat(amount, vatMode) {
+  const value = Math.abs(Number(amount) || 0);
+  if (vatMode === "included") return value * (VAT_RATE / (1 + VAT_RATE));
+  if (vatMode === "excluded") return value * VAT_RATE;
+  return 0;
 }
 
 function entry(tx, accountId, debit, credit) {
@@ -666,6 +801,30 @@ async function deleteMyAccount() {
   }
 }
 
+function createInvoice(event) {
+  event.preventDefault();
+  const amount = Number(dom.invoiceAmount.value) || 0;
+  if (!dom.invoiceClient.value.trim() || !dom.invoiceDescription.value.trim() || amount <= 0) return;
+  const vatMode = dom.invoiceVat.value;
+  const vat = vatMode === "included" ? amount * VAT_RATE : 0;
+  const total = amount + vat;
+  state.invoices.unshift({
+    id: crypto.randomUUID ? crypto.randomUUID() : `invoice-${Date.now()}`,
+    client: dom.invoiceClient.value.trim(),
+    description: dom.invoiceDescription.value.trim(),
+    amount,
+    vat,
+    total,
+    vatMode,
+    dueDate: dom.invoiceDue.value,
+    status: "draft",
+    createdAt: new Date().toISOString(),
+  });
+  dom.invoiceForm.reset();
+  saveState();
+  render();
+}
+
 dom.navItems.forEach((button) => {
   button.addEventListener("click", () => {
     dom.navItems.forEach((item) => item.classList.remove("active"));
@@ -673,6 +832,12 @@ dom.navItems.forEach((button) => {
     button.classList.add("active");
     document.querySelector(`#${button.dataset.view}`).classList.add("active");
     dom.title.textContent = button.textContent;
+  });
+});
+
+document.querySelectorAll("[data-jump-view]").forEach((button) => {
+  button.addEventListener("click", () => {
+    document.querySelector(`.nav-item[data-view="${button.dataset.jumpView}"]`)?.click();
   });
 });
 
@@ -742,6 +907,25 @@ dom.accountList.addEventListener("click", (event) => {
   render();
 });
 
+dom.invoiceForm.addEventListener("submit", createInvoice);
+
+dom.invoiceList.addEventListener("click", (event) => {
+  const status = event.target.dataset.invoiceStatus;
+  const removeId = event.target.dataset.removeInvoice;
+  if (status) {
+    const invoice = state.invoices.find((item) => item.id === event.target.dataset.id);
+    if (!invoice) return;
+    invoice.status = status;
+    saveState();
+    render();
+  }
+  if (removeId) {
+    state.invoices = state.invoices.filter((invoice) => invoice.id !== removeId);
+    saveState();
+    render();
+  }
+});
+
 dom.saveBudgets.addEventListener("click", () => {
   document.querySelectorAll("[data-budget-account]").forEach((input) => {
     state.budgets[input.dataset.budgetAccount] = Number(input.value) || 0;
@@ -758,6 +942,19 @@ dom.exportLedger.addEventListener("click", () => {
 dom.exportTrial.addEventListener("click", () => {
   const rows = [["Account", "Debit", "Credit"], ...buildTrialBalance(buildLedger()).map((row) => [row.accountName, row.debit, row.credit])];
   downloadCsv("ledgerly-trial-balance.csv", rows);
+});
+
+dom.exportVat.addEventListener("click", () => {
+  const vat = buildVatReport();
+  const rows = [
+    ["Date", "Description", "Type", "Amount", "VAT"],
+    ...vat.rows.map((row) => [row.date, row.description, row.type, row.amount, row.vat]),
+    [],
+    ["Output VAT", vat.outputTotal],
+    ["Input VAT", vat.inputTotal],
+    ["Estimated payable/refund", vat.outputTotal - vat.inputTotal],
+  ];
+  downloadCsv("ledgerly-vat-report.csv", rows);
 });
 
 dom.authTabs.forEach((tab) => {
