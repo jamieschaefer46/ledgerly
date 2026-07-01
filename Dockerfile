@@ -7,9 +7,7 @@ ENV PORT=8080
 
 WORKDIR /app
 
-COPY server.py /app/server.py
-COPY static /app/static
-COPY README.md /app/README.md
+COPY . /app
 
 RUN mkdir -p /app/data
 

@@ -15,6 +15,8 @@ from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parent
 STATIC = ROOT / "static"
+if not STATIC.exists():
+    STATIC = ROOT
 DATA = ROOT / "data"
 DB_PATH = DATA / "ledgerly.sqlite3"
 SESSION_COOKIE = "ledgerly_session"
@@ -166,7 +168,12 @@ class LedgerlyHandler(BaseHTTPRequestHandler):
     def serve_static(self, path):
         safe_path = "index.html" if path in ("", "/") else path.lstrip("/")
         file_path = (STATIC / safe_path).resolve()
-        if not str(file_path).startswith(str(STATIC.resolve())) or not file_path.is_file():
+        allowed_suffixes = {".html", ".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp"}
+        if (
+            not str(file_path).startswith(str(STATIC.resolve()))
+            or not file_path.is_file()
+            or file_path.suffix.lower() not in allowed_suffixes
+        ):
             file_path = STATIC / "index.html"
         body = file_path.read_bytes()
         content_type = mimetypes.guess_type(file_path.name)[0] or "application/octet-stream"
