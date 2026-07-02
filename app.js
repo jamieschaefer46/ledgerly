@@ -3,6 +3,7 @@ const VAT_RATE = 0.15;
 let currentSession = null;
 let authMode = "signup";
 let saveTimer = null;
+let deferredInstallPrompt = null;
 
 const defaultAccounts = [
   { id: "bank", name: "Bank", type: "asset", system: true },
@@ -147,6 +148,7 @@ const dom = {
   sessionUser: document.querySelector("#session-user"),
   saveStatus: document.querySelector("#save-status"),
   activatePlan: document.querySelector("#activate-plan"),
+  installApp: document.querySelector("#install-app"),
   settingsActivatePlan: document.querySelector("#settings-activate-plan"),
   subscriptionStatus: document.querySelector("#subscription-status"),
   paymentMessage: document.querySelector("#payment-message"),
@@ -699,6 +701,52 @@ function escapeAttribute(value) {
   return escapeHtml(value).replace(/"/g, "&quot;");
 }
 
+function isInstalledApp() {
+  return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+}
+
+function setupInstallPrompt() {
+  if (!dom.installApp) return;
+
+  if (isInstalledApp()) {
+    dom.installApp.textContent = "Installed";
+    dom.installApp.disabled = true;
+    return;
+  }
+
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    dom.installApp.textContent = "Install app";
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    dom.installApp.textContent = "Installed";
+    dom.installApp.disabled = true;
+  });
+
+  dom.installApp.addEventListener("click", async () => {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      return;
+    }
+
+    alert("To install Ledgerly, open your browser menu and choose Install app, Add to Dock, or Add to Home Screen.");
+  });
+}
+
+async function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  try {
+    await navigator.serviceWorker.register("./service-worker.js");
+  } catch (error) {
+    console.warn("Ledgerly install support could not be registered", error);
+  }
+}
+
 async function init() {
   try {
     const sessionResponse = await fetch("/api/session");
@@ -989,5 +1037,7 @@ dom.settingsActivatePlan.addEventListener("click", activateSubscription);
 dom.exportData.addEventListener("click", exportMyData);
 dom.deleteAccount.addEventListener("click", deleteMyAccount);
 
+setupInstallPrompt();
+registerServiceWorker();
 setAuthMode("signup");
 init();

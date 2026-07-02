@@ -83,7 +83,7 @@ def migrate():
               user_id integer not null references users(id) on delete cascade,
               name text not null,
               subscription_status text not null default 'trial',
-              monthly_price_cents integer not null default 15000,
+              monthly_price_cents integer not null default 20000,
               created_at text not null default current_timestamp
             );
 
@@ -168,7 +168,7 @@ class LedgerlyHandler(BaseHTTPRequestHandler):
     def serve_static(self, path):
         safe_path = "index.html" if path in ("", "/") else path.lstrip("/")
         file_path = (STATIC / safe_path).resolve()
-        allowed_suffixes = {".html", ".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp"}
+        allowed_suffixes = {".html", ".css", ".js", ".json", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp"}
         if (
             not str(file_path).startswith(str(STATIC.resolve()))
             or not file_path.is_file()

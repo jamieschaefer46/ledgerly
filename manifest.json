@@ -1,0 +1,40 @@
+{
+  "name": "Ledgerly - Small Business Accounting",
+  "short_name": "Ledgerly",
+  "description": "Import bank statements, allocate transactions, create invoices, track VAT, budgets, ledgers, and trial balances.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8fbf9",
+  "theme_color": "#093f34",
+  "orientation": "portrait-primary",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Process statement",
+      "short_name": "Process",
+      "description": "Open Ledgerly transaction processing.",
+      "url": "/?view=processing"
+    },
+    {
+      "name": "Invoices",
+      "short_name": "Invoices",
+      "description": "Open Ledgerly invoices.",
+      "url": "/?view=invoices"
+    }
+  ]
+}

@@ -24,7 +24,7 @@ For real users, upgrade to a paid service with a persistent disk or move the dat
 - CSV report exports
 - Full user data export
 - Account deletion
-- Subscription checkout placeholder for R200/month
+- Subscription checkout placeholder for R150/month
 - Health check endpoint for hosting
 - Dockerfile and Render blueprint
 - Starter privacy policy and terms pages

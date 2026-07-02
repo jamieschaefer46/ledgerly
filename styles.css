@@ -277,6 +277,11 @@ body.authenticated .auth-screen {
   font-size: 1.35rem;
 }
 
+.install-app {
+  margin-top: 0.7rem;
+  width: 100%;
+}
+
 .workspace {
   min-width: 0;
   padding: 1.35rem;
